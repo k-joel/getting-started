@@ -23,12 +23,18 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest # Renamed for clarity
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest
 
-    - name: Deploy the Application Locally
+    - name: Stop existing container
+      continue-on-error: true
+      run: docker stop getting-started-app
+
+    - name: Remove existing container
+      continue-on-error: true
+      run: docker rm getting-started-app
+
+    - name: Pull and run new container
       run: |
         docker pull ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest
-        docker stop getting-started-app || true
-        docker rm getting-started-app || true
         docker run -d --name getting-started-app -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest
         echo "Deployment complete!"
