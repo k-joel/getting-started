@@ -2,7 +2,7 @@ name: Build and Deploy Node.js App
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
@@ -23,31 +23,12 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/getting-started:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest # Renamed for clarity
 
-    - name: Install cloudflared
+    - name: Deploy the Application Locally
       run: |
-        Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "cloudflared.exe"
-        
-    - name: Setup SSH config for Cloudflare Tunnel
-      run: |
-        $ssh_config_path = "$HOME\.ssh\config"
-        $config_entry = @"
-        Host ssh.kjoel.co.in
-          ProxyCommand C:\actions-runner\_work\getting-started\getting-started\cloudflared.exe access ssh --hostname %h
-        "@
-        Add-Content -Path $ssh_config_path -Value $config_entry
-        
-    - name: Deploy to Server via Cloudflare Tunnel
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }} 
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          echo "Successfully connected to server via Cloudflare Tunnel!"
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/getting-started:latest
-          docker stop getting-started || true
-          docker rm getting-started || true
-          docker run -d --name getting-started -p 80:3000 ${{ secrets.DOCKERHUB_USERNAME }}/getting-started:latest
-          echo "Deployment complete!"
+        docker pull ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest
+        docker stop getting-started-app || true
+        docker rm getting-started-app || true
+        docker run -d --name getting-started-app -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME }}/getting-started-app:latest
+        echo "Deployment complete!"
